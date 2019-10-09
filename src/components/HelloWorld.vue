@@ -1,45 +1,116 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <div class="container-fluid">
+    <h1>Список товаров</h1>
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Фильтры</h5>
+            <div class="card-text">
+              <form>
+                <div class="form-group">
+                  <drop-down
+                    @change-drop-down-item="changeItem({brand: $event})"
+                    :title="'Бренд'"
+                    :list="listBrand"
+                  />
+                </div>
+                <div class="form-group">
+                  <drop-down
+                    @change-drop-down-item="changeItem({size: $event})"
+                    :title="'Размеры'"
+                    :list="listSize"
+                  />
+                </div>
+                <div class="form-group">
+                  <drop-down
+                    @change-drop-down-item="changeItem({color: $event})"
+                    :title="'Цвета'"
+                    :list="listColors"
+                  />
+                </div>
+                <div class="text-right">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="isDisabled"
+                    @click="clearFilter"
+                  >Сбросить</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-light" role="alert">Найдено {{listProducts.length}} товара</div>
+    <list-item :products="listProducts" />
   </div>
 </template>
 
 <script>
+import CustomDropDown from "./CustomDropDown.vue";
+import ListItem from "./ListItem.vue";
+import products from "../assets/content";
+
 export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
+  name: "HelloWorld",
+  components: {
+    "drop-down": CustomDropDown,
+    "list-item": ListItem
+  },
+  data() {
+    return {
+      listBrand: ["Super", "Puper", "Cool", "Like"],
+      listSize: [29, 31, 35, 37, 42],
+      listColors: ["Синий", "Красный", "Зеленый", "Белый", "Серый"],
+      listProducts: products,
+      filterValue: {}
+    };
+  },
+  methods: {
+    changeItem(item) {
+      this.filterValue = { ...this.filterValue, ...item };
+      this.filter();
+    },
+    filter() {
+      const data = products.filter(product => {
+        const arrayKeys = Object.keys(this.filterValue);
+        let counter = 0;
+        const isFilter = arrayKeys.some(item => {
+          const value = this.filterValue[item];
+          const value1 = product[item];
+          if (value === value1) {
+            counter++;
+          }
+          if (counter === arrayKeys.length) return true;
+        });
+        return isFilter;
+      });
+      this.listProducts = data;
+    },
+    clearFilter() {
+      this.filterValue = {};
+      this.$root.$emit("clear-filter");
+      this.listProducts = products;
+    }
+  },
+  computed: {
+    isDisabled: function() {
+      if (
+        this.filterValue.brand ||
+        this.filterValue.size ||
+        this.filterValue.color
+      ) {
+        return false;
+      } else {
+        return true;
+      }
+    }
   }
-}
+};
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 h3 {
   margin: 40px 0 0;
